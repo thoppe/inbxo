@@ -10,7 +10,7 @@ from inbxo import Questions as Q
 
 app_text = {
     "title": "Inbxo ✨📬",
-    "footer": "Built by [Travis Hoppe](https://github.com/thoppe/inbxo)",
+    "footer": "Built by [Travis Hoppe](https://github.com/thoppe/inbxo) with 💜",
 }
 
 default_textbox = """student@cuny.edu\nprovost@unr.edu"""
@@ -18,15 +18,13 @@ default_textbox = """student@cuny.edu\nprovost@unr.edu"""
 st.set_page_config(layout="wide")
 st.title(app_text["title"])
 text_input = st.text_area("Enter a list of emails:", value=default_textbox, height=300)
-# st.button("COMPUTE!")
 
 lines = [line.strip() for line in text_input.split("\n")]
 lines = [line.split("@")[-1] for line in lines]
 lines = [line for line in lines if line.strip()]
 domains = pd.Series(lines).value_counts()
-#domains = domains[:50]
 
-with st.status(f"Found {len(domains)} email addresses"):
+with st.status(f"Found {len(lines)} email addresses"):
     pass
 
 with st.status(f"Computing {len(domains)} unique email domains"):
@@ -58,13 +56,12 @@ cols = st.columns([1, 1, 1])
 
 dx = df.dropna(subset=["is_university"])
 
-
 fields = ["is_university", "is_R1", "is_minority_serving_institution"]
 colors = [
     px.colors.sequential.RdBu,
     px.colors.sequential.turbid,
     px.colors.sequential.dense,
-]
+] * 3
 
 for col, field, color in zip(cols, fields, colors):
     with col:
@@ -79,7 +76,7 @@ for col, field, color in zip(cols, fields, colors):
         fig.update_layout(
             margin=dict(l=20, r=20, t=30, b=0),
         )
-        fig.update_traces(textinfo='label+value', hoverinfo='label+value+percent')
+        fig.update_traces(textinfo="label+value", hoverinfo="label+value+percent")
         st.plotly_chart(fig, use_container_width=True)
 
 
@@ -93,40 +90,44 @@ data = data.reset_index()
 
 ########################
 
-st.write("### State coverage")
+st.write("### US State coverage")
 
 import us as US_CONVERT
+
+
 def state_name_to_abbr(state_name):
     state = US_CONVERT.states.lookup(state_name)
     return state.abbr if state else None
 
+
 data = pd.DataFrame(data)
-data['State2'] = data['State'].apply(state_name_to_abbr)
+data["State2"] = data["State"].apply(state_name_to_abbr)
 
 # Create choropleth map
-fig = px.choropleth(data, 
-                    locations='State2',  # State column
-                    locationmode="USA-states",  # To map to US states
-                    color='count',  # Column with the counts
-                    scope="usa",  # Focus on USA
-                    color_continuous_scale="Cividis",  # Color scale for counts
-                    labels={'count': 'Count'},  # Label for color bar
-                    range_color=[0,data["count"].max()],
-                    )
+fig = px.choropleth(
+    data,
+    locations="State2",  # State column
+    locationmode="USA-states",  # To map to US states
+    color="count",  # Column with the counts
+    scope="usa",  # Focus on USA
+    color_continuous_scale="Cividis",  # Color scale for counts
+    labels={"count": "Count"},  # Label for color bar
+    range_color=[0, data["count"].max()],
+)
 
 # Update layout for better visuals
 projection = plotly.graph_objects.layout.geo.Projection
 fig.update_layout(
-    #title_text='State Map with Counts',
+    # title_text='State Map with Counts',
     geo=dict(
-        scope='usa',
-        projection=projection(type = 'albers usa'), # US projection
+        scope="usa",
+        projection=projection(type="albers usa"),  # US projection
     )
 )
 fig.update_traces(
-    text=data['State2'],   # Add the text data to display on the map
-    #texttemplate='%{text}',      # Template for displaying the text
-    #textposition='middle center' # Position of the text on the regions
+    text=data["State2"],  # Add the text data to display on the map
+    # texttemplate='%{text}',      # Template for displaying the text
+    # textposition='middle center' # Position of the text on the regions
 )
 
 
@@ -135,7 +136,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 ########################
 
-st.write("### State counts")
+st.write("### US State counts")
 del data["State2"]
 st.write(data)
 
@@ -145,5 +146,3 @@ st.plotly_chart(fig, use_container_width=False)
 ########################
 
 st.write(app_text["footer"])
-
-
