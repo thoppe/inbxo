@@ -4,6 +4,7 @@ import os
 import json
 from typing import Any
 import slugify
+from tenacity import retry, stop_after_delay, stop_after_attempt
 
 # Retrieve the OpenAI API key from environment variables
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -26,6 +27,7 @@ class Query:
 
         return self.cache[target]
 
+    @retry(stop=(stop_after_delay(10) | stop_after_attempt(3)))
     def compute(self, target: str):
 
         print(f"{self.question} : {target}")

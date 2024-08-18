@@ -2,14 +2,14 @@ import streamlit as st
 import pandas as pd
 from stqdm import stqdm
 import plotly.express as px
-
+import plotly.graph_objects
 from inbxo import Questions as Q
 
 # import src.viz_interface as interface
 # from bokeh.models import Label
 
 app_text = {
-    "title": "Inbxo",
+    "title": "Inbxo ✨📬",
     "footer": "Built by [Travis Hoppe](https://github.com/thoppe/inbxo)",
 }
 
@@ -24,9 +24,12 @@ lines = [line.strip() for line in text_input.split("\n")]
 lines = [line.split("@")[-1] for line in lines]
 lines = [line for line in lines if line.strip()]
 domains = pd.Series(lines).value_counts()
-domains = domains[:50]
+#domains = domains[:50]
 
-with st.status(f"Computing {len(domains)} email domains"):
+with st.status(f"Found {len(domains)} email addresses"):
+    pass
+
+with st.status(f"Computing {len(domains)} unique email domains"):
     data = []
     for domain in stqdm(domains.index, st_container=st.sidebar):
         result = Q["email"](domain)
@@ -34,13 +37,10 @@ with st.status(f"Computing {len(domains)} email domains"):
         data.append(result)
 
 df = pd.DataFrame(data).set_index("domain")
-st.write(df.index)
-st.write(domains)
-
-
 df = pd.concat([domains, df], axis=1)
 dx = df.dropna(subset=["is_academic"])
 dx = dx[dx.is_academic]
+
 with st.status(f"Computing {len(dx)} academic institutions"):
     data = []
     for domain in stqdm(dx.index, st_container=st.sidebar):
@@ -79,15 +79,71 @@ for col, field, color in zip(cols, fields, colors):
         fig.update_layout(
             margin=dict(l=20, r=20, t=30, b=0),
         )
+        fig.update_traces(textinfo='label+value', hoverinfo='label+value+percent')
         st.plotly_chart(fig, use_container_width=True)
 
 
+st.write("### Enhanced data")
 st.write(df)
+
+########################
+
 data = df["State"].value_counts().sort_values(ascending=False)
 data = data.reset_index()
+
+########################
+
+st.write("### State coverage")
+
+import us as US_CONVERT
+def state_name_to_abbr(state_name):
+    state = US_CONVERT.states.lookup(state_name)
+    return state.abbr if state else None
+
+data = pd.DataFrame(data)
+data['State2'] = data['State'].apply(state_name_to_abbr)
+
+# Create choropleth map
+fig = px.choropleth(data, 
+                    locations='State2',  # State column
+                    locationmode="USA-states",  # To map to US states
+                    color='count',  # Column with the counts
+                    scope="usa",  # Focus on USA
+                    color_continuous_scale="Cividis",  # Color scale for counts
+                    labels={'count': 'Count'},  # Label for color bar
+                    range_color=[0,data["count"].max()],
+                    )
+
+# Update layout for better visuals
+projection = plotly.graph_objects.layout.geo.Projection
+fig.update_layout(
+    #title_text='State Map with Counts',
+    geo=dict(
+        scope='usa',
+        projection=projection(type = 'albers usa'), # US projection
+    )
+)
+fig.update_traces(
+    text=data['State2'],   # Add the text data to display on the map
+    #texttemplate='%{text}',      # Template for displaying the text
+    #textposition='middle center' # Position of the text on the regions
+)
+
+
+# Show the figure
+st.plotly_chart(fig, use_container_width=True)
+
+########################
+
+st.write("### State counts")
+del data["State2"]
 st.write(data)
 
 fig = px.bar(data, y="count", x="State")
 st.plotly_chart(fig, use_container_width=False)
 
+########################
+
 st.write(app_text["footer"])
+
+
