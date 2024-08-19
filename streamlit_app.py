@@ -17,10 +17,12 @@ st.set_page_config(layout="wide", page_title=app_text["title"])
 st.title(app_text["title"])
 st.markdown(f"_{app_text['subtext']}_")
 
-default_textbox = """student@cuny.edu\nprovost@unr.edu"""
+with open("resources/default_emails.txt") as FIN:
+    default_textbox = FIN.read()
 text_input = st.text_area("Enter a list of emails:", value=default_textbox, height=200)
 
 lines = [line.strip() for line in text_input.split("\n")]
+lines = [line for line in lines if "@" in line]
 lines = [line.split("@")[-1] for line in lines]
 lines = [line for line in lines if line.strip()]
 domains = pd.Series(lines).value_counts()
@@ -123,7 +125,7 @@ cols[0].plotly_chart(fig, use_container_width=True)
 del data["State2"]
 cols[1].write("### US State counts")
 data = data.set_index("State")
-cols[1].write(data, use_container_width=True)
+cols[1].write(data)
 
 ########################
 data = data.reset_index()
@@ -132,11 +134,16 @@ st.plotly_chart(fig, use_container_width=False)
 
 ########################
 
+f_schema = "inbxo/schema.py"
+with open(f_schema) as FIN:
+    code_block = FIN.read()
+with st.expander("🔽 Expand to show GPT schema"):
+    st.code(code_block)
+
+########################
+
 st.write(app_text["footer"])
 
 ########################
 
-f_schema = "inbxo/schema.py"
-with open(f_schema) as FIN:
-    code_block = FIN.read()
-st.code(code_block)
+
