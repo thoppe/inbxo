@@ -145,5 +145,3 @@ with st.expander("🔽 Expand to show GPT schema"):
 st.write(app_text["footer"])
 
 ########################
-
-
