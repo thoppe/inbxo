@@ -1,1 +1,1 @@
-from .schema import Questions
+from .schema import Questions  # noqa

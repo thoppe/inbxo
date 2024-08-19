@@ -5,5 +5,6 @@ edit:
 	emacs streamlit_app.py &
 
 lint:
-	black . inbxo
+	black . 
+	flake8 . --max-line-length=91
 

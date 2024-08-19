@@ -1,5 +1,5 @@
 from .query import Query
-from typing import List, Any
+from typing import List
 from pydantic import BaseModel
 
 Questions = {}

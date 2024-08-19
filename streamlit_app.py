@@ -2,22 +2,23 @@ import streamlit as st
 import pandas as pd
 from stqdm import stqdm
 import plotly.express as px
-import plotly.graph_objects
+import us as US_CONVERT
+
 from inbxo import Questions as Q
 
-# import src.viz_interface as interface
-# from bokeh.models import Label
 
 app_text = {
     "title": "Inbxo ✨📬",
-    "footer": "Built by [Travis Hoppe](https://github.com/thoppe/inbxo) with 💜",
+    "subtext": "Runs basic analysis on a list of emails. Only email domains are analyzed.",
+    "footer": "Built with 💜 by [Travis Hoppe](https://github.com/thoppe/inbxo).",
 }
 
-default_textbox = """student@cuny.edu\nprovost@unr.edu"""
-
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide", page_title=app_text["title"])
 st.title(app_text["title"])
-text_input = st.text_area("Enter a list of emails:", value=default_textbox, height=300)
+st.markdown(f"_{app_text['subtext']}_")
+
+default_textbox = """student@cuny.edu\nprovost@unr.edu"""
+text_input = st.text_area("Enter a list of emails:", value=default_textbox, height=200)
 
 lines = [line.strip() for line in text_input.split("\n")]
 lines = [line.split("@")[-1] for line in lines]
@@ -39,7 +40,7 @@ df = pd.concat([domains, df], axis=1)
 dx = df.dropna(subset=["is_academic"])
 dx = dx[dx.is_academic]
 
-with st.status(f"Computing {len(dx)} academic institutions"):
+with st.status(f"Computing {len(dx)} unique academic institutions"):
     data = []
     for domain in stqdm(dx.index, st_container=st.sidebar):
         result = Q["academic"](domain)
@@ -81,6 +82,8 @@ for col, field, color in zip(cols, fields, colors):
 
 
 st.write("### Enhanced data")
+df = df.set_index("domain_name")
+# df.index.name = "doma"
 st.write(df)
 
 ########################
@@ -89,10 +92,6 @@ data = df["State"].value_counts().sort_values(ascending=False)
 data = data.reset_index()
 
 ########################
-
-st.write("### US State coverage")
-
-import us as US_CONVERT
 
 
 def state_name_to_abbr(state_name):
@@ -115,34 +114,29 @@ fig = px.choropleth(
     range_color=[0, data["count"].max()],
 )
 
-# Update layout for better visuals
-projection = plotly.graph_objects.layout.geo.Projection
-fig.update_layout(
-    # title_text='State Map with Counts',
-    geo=dict(
-        scope="usa",
-        projection=projection(type="albers usa"),  # US projection
-    )
-)
-fig.update_traces(
-    text=data["State2"],  # Add the text data to display on the map
-    # texttemplate='%{text}',      # Template for displaying the text
-    # textposition='middle center' # Position of the text on the regions
-)
-
-
-# Show the figure
-st.plotly_chart(fig, use_container_width=True)
+cols = st.columns([1, 1])
+cols[0].write("### US State coverage")
+cols[0].plotly_chart(fig, use_container_width=True)
 
 ########################
 
-st.write("### US State counts")
 del data["State2"]
-st.write(data)
+cols[1].write("### US State counts")
+data = data.set_index("State")
+cols[1].write(data, use_container_width=True)
 
+########################
+data = data.reset_index()
 fig = px.bar(data, y="count", x="State")
 st.plotly_chart(fig, use_container_width=False)
 
 ########################
 
 st.write(app_text["footer"])
+
+########################
+
+f_schema = "inbxo/schema.py"
+with open(f_schema) as FIN:
+    code_block = FIN.read()
+st.code(code_block)
