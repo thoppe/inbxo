@@ -37,6 +37,9 @@ with st.status(f"Computing {len(domains)} unique email domains"):
         result["domain"] = domain
         data.append(result)
 
+if not data:
+    st.stop()
+       
 df = pd.DataFrame(data).set_index("domain")
 df = pd.concat([domains, df], axis=1)
 dx = df.dropna(subset=["is_academic"])
@@ -64,6 +67,7 @@ colors = [
     px.colors.sequential.RdBu,
     px.colors.sequential.turbid,
     px.colors.sequential.dense,
+    px.colors.sequential.RdBu,
 ] * 3
 
 for col, field, color in zip(cols, fields, colors):
@@ -83,9 +87,6 @@ for col, field, color in zip(cols, fields, colors):
         st.plotly_chart(fig, use_container_width=True)
 
 
-st.write("### Enhanced data")
-df = df.set_index("domain_name")
-# df.index.name = "doma"
 st.write(df)
 
 ########################
