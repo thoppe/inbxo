@@ -39,9 +39,13 @@ with st.status(f"Computing {len(domains)} unique email domains"):
 
 if not data:
     st.stop()
-       
-df = pd.DataFrame(data).set_index("domain")
+
+df = pd.DataFrame(data)
+
+df = df.set_index("domain")
 df = pd.concat([domains, df], axis=1)
+
+data = []
 dx = df.dropna(subset=["is_academic"])
 dx = dx[dx.is_academic]
 
@@ -52,15 +56,17 @@ with st.status(f"Computing {len(dx)} unique academic institutions"):
         result["domain"] = domain
         data.append(result)
 
+if not len(data):
+    st.write(df)
+    st.stop()
+
 dx = pd.DataFrame(data).set_index("domain")
 del dx["expanded_name"]
-df = pd.concat([df, dx], axis=1)
 
+df = pd.concat([df, dx], axis=1)
 df = df.rename(columns={"country_of_origin_ISO_3166_alpha2": "country"})
 
 cols = st.columns([1, 1, 1])
-
-dx = df.dropna(subset=["is_university"])
 
 fields = ["is_university", "is_R1", "is_minority_serving_institution"]
 colors = [
@@ -70,7 +76,10 @@ colors = [
     px.colors.sequential.RdBu,
 ] * 3
 
+dx = df.dropna(subset=["is_university"])
+
 for col, field, color in zip(cols, fields, colors):
+
     with col:
         fig = px.pie(
             dx,
@@ -85,7 +94,6 @@ for col, field, color in zip(cols, fields, colors):
         )
         fig.update_traces(textinfo="label+value", hoverinfo="label+value+percent")
         st.plotly_chart(fig, use_container_width=True)
-
 
 st.write(df)
 
